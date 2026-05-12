@@ -375,11 +375,11 @@ body.dark-mode .se-in{background:#0A2010;color:#2ECC71;border-color:#0A4020}
     <div style="display:flex;flex-direction:column;gap:.9rem">
       <div class="field">
         <label>Person's Name *</label>
-        <input type="text" id="so-person" placeholder="e.g. Jane Smith" oninput="filterSignOutItems()"/>
+        <input type="text" id="so-person" placeholder="e.g. Jane Smith"/>
       </div>
       <div class="field">
         <label>Item Being Taken *</label>
-        <input type="text" id="so-item-search" placeholder="Search inventory or type item name…" oninput="filterSignOutItems()" autocomplete="off"/>
+        <input type="text" id="so-item-search" placeholder="Search inventory or type item name…" oninput="filterSignOutItems()" onblur="setTimeout(()=>document.getElementById('so-item-suggestions').style.display='none',150)" autocomplete="off"/>
         <div id="so-item-suggestions" style="border:1px solid var(--border);border-radius:8px;background:var(--white);max-height:180px;overflow-y:auto;margin-top:4px;display:none;box-shadow:0 4px 16px rgba(0,0,0,.1)"></div>
       </div>
       <div class="field">
@@ -1100,7 +1100,7 @@ function filterSignOutItems(){
   ).slice(0,8);
   if(!matches.length){ box.style.display='none'; return; }
   box.innerHTML = matches.map(i=>`
-    <div onclick="selectSignOutItem(${JSON.stringify(esc(i.id))},${JSON.stringify(esc(i.name))})" style="padding:.5rem .85rem;cursor:pointer;font-size:13px;border-bottom:1px solid var(--border)" onmouseover="this.style.background='var(--gold-lt)'" onmouseout="this.style.background=''">
+    <div onmousedown="event.preventDefault();selectSignOutItem(${JSON.stringify(esc(i.id))},${JSON.stringify(esc(i.name))})" style="padding:.5rem .85rem;cursor:pointer;font-size:13px;border-bottom:1px solid var(--border)" onmouseover="this.style.background='var(--gold-lt)'" onmouseout="this.style.background=''">
       <strong>${esc(i.name)}</strong>
       <span style="color:var(--muted);font-size:11px;margin-left:8px">${esc(i.location||'')}${i.serial?' · '+esc(i.serial):''}</span>
     </div>`).join('');
@@ -1159,15 +1159,18 @@ function renderSignOutLog(){
         <div class="se-time">🕐 ${dateStr} at ${timeStr}</div>
       </div>
       <div style="display:flex;flex-direction:column;align-items:flex-end;gap:6px">
-        <span class="se-status se-out">Signed Out</span>
-        <button onclick="removeSignOutEntry('${e.id}')" style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:18px;line-height:1" title="Remove entry">×</button>
+        <span class="se-status ${e.status==='in'?'se-in':'se-out'}">${e.status==='in'?'Signed In':'Signed Out'}</span>
+        ${e.status!=='in'?`<button onclick="signBackIn('${e.id}')" class="btn btn-green" style="font-size:12px;padding:.3rem .7rem;white-space:nowrap">✅ Sign Back In</button>`:''}
       </div>
     </div>`;
   }).join('');
 }
 
-function removeSignOutEntry(id){
-  signOutLog = signOutLog.filter(e=>e.id!==id);
+function signBackIn(id){
+  const entry = signOutLog.find(e=>e.id===id);
+  if(!entry) return;
+  entry.status = 'in';
+  entry.returnedAt = new Date().toISOString();
   saveSignOutLog();
   renderSignOutLog();
 }
