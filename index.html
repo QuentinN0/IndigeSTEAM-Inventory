@@ -1085,6 +1085,16 @@ function openSignOutModal(){
   document.getElementById('so-qty').value='1';
   document.getElementById('so-notes').value='';
   window._soSelectedItem = null;
+  // Re-attach delegated mousedown listener (clone removes old listeners)
+  const box = document.getElementById('so-item-suggestions');
+  const newBox = box.cloneNode(false);
+  box.parentNode.replaceChild(newBox, box);
+  newBox.addEventListener('mousedown', e=>{
+    e.preventDefault();
+    const item = e.target.closest('[data-item-id]');
+    if(!item) return;
+    selectSignOutItem(item.dataset.itemId, item.dataset.itemName);
+  });
   openModal('modal-signout');
   setTimeout(()=>document.getElementById('so-person').focus(),100);
 }
@@ -1100,7 +1110,7 @@ function filterSignOutItems(){
   ).slice(0,8);
   if(!matches.length){ box.style.display='none'; return; }
   box.innerHTML = matches.map(i=>`
-    <div onmousedown="event.preventDefault();selectSignOutItem(${JSON.stringify(esc(i.id))},${JSON.stringify(esc(i.name))})" style="padding:.5rem .85rem;cursor:pointer;font-size:13px;border-bottom:1px solid var(--border)" onmouseover="this.style.background='var(--gold-lt)'" onmouseout="this.style.background=''">
+    <div data-item-id="${esc(i.id)}" data-item-name="${esc(i.name)}" style="padding:.5rem .85rem;cursor:pointer;font-size:13px;border-bottom:1px solid var(--border)" onmouseover="this.style.background='var(--gold-lt)'" onmouseout="this.style.background=''">
       <strong>${esc(i.name)}</strong>
       <span style="color:var(--muted);font-size:11px;margin-left:8px">${esc(i.location||'')}${i.serial?' · '+esc(i.serial):''}</span>
     </div>`).join('');
